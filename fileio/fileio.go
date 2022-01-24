@@ -15,8 +15,6 @@ func ReadIP() (string, error) {
 		return "", errors.Wrap(errOpenLogFile, "error opening log file")
 	}
 
-	defer file.Close()
-
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		fileContents = append(fileContents, scanner.Text())
@@ -33,7 +31,7 @@ func ReadIP() (string, error) {
 		return "", nil
 	}
 
-	return fileContents[0], nil
+	return fileContents[0], file.Close() // https://www.joeshaw.org/dont-defer-close-on-writable-files/
 }
 
 func WriteIP(ip string) error {
