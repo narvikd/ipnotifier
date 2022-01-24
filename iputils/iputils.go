@@ -1,10 +1,11 @@
 package iputils
 
 import (
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"ipnotifier/httpclient"
+	"ipnotifier/pkg/errorsutils"
 	"net"
 	"net/http"
 	"strings"
@@ -14,7 +15,7 @@ func GetPublicIP() (string, error) {
 	client := httpclient.MakeDefaultClient()
 	res, errRes := client.Get("https://checkip.amazonaws.com")
 	if errRes != nil {
-		return "", errors.Wrap(errRes, "public ip http client couldn't make http request")
+		return "", errorsutils.Wrap(errRes, "public ip http client couldn't make http request")
 	}
 	//req.Header.Add("User-Agent", "")
 
@@ -25,7 +26,7 @@ func GetPublicIP() (string, error) {
 
 	body, errBody := ioutil.ReadAll(res.Body)
 	if errBody != nil {
-		return "", errors.Wrap(errBody, "public ip http client couldn't read response body")
+		return "", errorsutils.Wrap(errBody, "public ip http client couldn't read response body")
 	}
 
 	ip := strings.TrimSuffix(string(body), "\n")

@@ -3,9 +3,10 @@ package telegram
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"ipnotifier/httpclient"
+	"ipnotifier/pkg/errorsutils"
 	"net/http"
 	"time"
 )
@@ -35,12 +36,12 @@ func NewClientReqModel(message string, token string, chatId string) *ClientReqMo
 func (m *ClientReqModel) Send() error {
 	reqBody, errMarshal := json.Marshal(m.TeleRequestModel)
 	if errMarshal != nil {
-		return errors.Wrap(errMarshal, "telegram http client couldn't marshall telegram model")
+		return errorsutils.Wrap(errMarshal, "telegram http client couldn't marshall telegram model")
 	}
 
 	req, errRes := m.Client.Post(m.Endpoint, "application/json", bytes.NewBuffer(reqBody))
 	if errRes != nil {
-		return errors.Wrap(errRes, "telegram http client couldn't make http request")
+		return errorsutils.Wrap(errRes, "telegram http client couldn't make http request")
 	}
 	//req.Header.Add("User-Agent", "")
 
@@ -52,7 +53,7 @@ func (m *ClientReqModel) Send() error {
 	resModel := new(TeleResModel)
 	errResDecode := json.NewDecoder(req.Body).Decode(resModel)
 	if errResDecode != nil {
-		return errors.Wrap(errResDecode, "telegram http client couldn't decode response into response model")
+		return errorsutils.Wrap(errResDecode, "telegram http client couldn't decode response into response model")
 	}
 
 	if !resModel.Ok {
