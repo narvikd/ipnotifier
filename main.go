@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"ipnotifier/fileio"
 	"ipnotifier/iputils"
 	"ipnotifier/telegram"
 	"log"
@@ -24,15 +26,33 @@ func main() {
 }
 
 func sendIP() error {
-	ip, errIP := iputils.GetPublicIP()
+	oldIP, errOldIP := fileio.ReadIP()
+	if errOldIP != nil {
+		return errOldIP
+	}
+
+	newIP, errIP := iputils.GetPublicIP()
 	if errIP != nil {
 		return errIP
 	}
 
-	m := telegram.NewClientReqModel(ip, os.Getenv("token"), os.Getenv("chatid"))
-	errSend := m.Send()
-	if errSend != nil {
-		return errSend
+	if oldIP != newIP {
+		msg := fmt.Sprintf("old ip: %s. new ip: %s", oldIP, newIP)
+		if oldIP == "" {
+			msg = fmt.Sprintf("new ip: %s", newIP)
+		}
+
+		m := telegram.NewClientReqModel(msg, os.Getenv("token"), os.Getenv("chatid"))
+		errSend := m.Send()
+		if errSend != nil {
+			return errSend
+		}
+
+		errWriteIP := fileio.WriteIP(newIP)
+		if errWriteIP != nil {
+			return errWriteIP
+		}
 	}
+
 	return nil
 }

@@ -5,7 +5,9 @@ import (
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"ipnotifier/httpclient"
+	"net"
 	"net/http"
+	"strings"
 )
 
 func GetPublicIP() (string, error) {
@@ -26,5 +28,14 @@ func GetPublicIP() (string, error) {
 		return "", errors.Wrap(errBody, "public ip http client couldn't read response body")
 	}
 
-	return string(body), nil
+	ip := strings.TrimSuffix(string(body), "\n")
+	if !isIPValid(ip) {
+		return "", errors.New("public ip http client returned an invalid ip address")
+	}
+
+	return ip, nil
+}
+
+func isIPValid(ip string) bool {
+	return net.ParseIP(ip) != nil
 }
