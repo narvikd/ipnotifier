@@ -7,26 +7,44 @@ import (
 	"ipnotifier/telegram"
 	"log"
 	"os"
+	"reflect"
+	"strings"
 )
 
-func init() {
-	var envVars = []string{"token", "chatid"}
-	for _, v := range envVars {
-		if len(os.Getenv(v)) <= 1 {
-			log.Fatalf("environment variable \"%s\" is not set.\n", v)
-		}
-	}
+type Model struct {
+	MachineID string
+	Token     string
+	ChatID    string
+	IPFile    string
 }
 
 func main() {
-	errSendIP := sendIP()
+	m := Model{
+		MachineID: os.Getenv("machineid"),
+		Token:     os.Getenv("token"),
+		ChatID:    os.Getenv("chatid"),
+		IPFile:    "ip.txt",
+	}
+	checkEnv(&m)
+	errSendIP := sendIP(&m)
 	if errSendIP != nil {
 		log.Fatalln(errSendIP)
 	}
 }
 
-func sendIP() error {
-	oldIP, errOldIP := fileio.ReadIP()
+func checkEnv(m *Model) {
+	v := reflect.ValueOf(m).Elem() // Gets the value of the pointer model
+	for i := 0; i < v.NumField(); i++ {
+		itemName := v.Type().Field(i).Name
+		varValue := v.Field(i).String()
+		if varValue == "" {
+			log.Fatalf("environment variable \"%s\" is not set.\n", strings.ToLower(itemName))
+		}
+	}
+}
+
+func sendIP(m *Model) error {
+	oldIP, errOldIP := fileio.ReadIP(m.IPFile)
 	if errOldIP != nil {
 		return errOldIP
 	}
@@ -37,18 +55,15 @@ func sendIP() error {
 	}
 
 	if oldIP != newIP {
-		msg := fmt.Sprintf("old ip: %s. new ip: %s", oldIP, newIP)
-		if oldIP == "" {
-			msg = fmt.Sprintf("new ip: %s", newIP)
-		}
+		msg := fmt.Sprintf("Machine: %s.\nNew ip: %s", m.MachineID, newIP)
 
-		m := telegram.NewClientReqModel(msg, os.Getenv("token"), os.Getenv("chatid"))
-		errSend := m.Send()
+		tele := telegram.NewClientReqModel(msg, m.Token, m.ChatID)
+		errSend := tele.Send()
 		if errSend != nil {
 			return errSend
 		}
 
-		errWriteIP := fileio.WriteIP(newIP)
+		errWriteIP := fileio.WriteIP(newIP, m.IPFile)
 		if errWriteIP != nil {
 			return errWriteIP
 		}

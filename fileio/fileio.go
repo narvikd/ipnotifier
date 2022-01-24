@@ -3,40 +3,37 @@ package fileio
 import (
 	"bufio"
 	"github.com/pkg/errors"
+	"ipnotifier/iputils"
 	"os"
 	"path/filepath"
 )
 
-func ReadIP() (string, error) {
-	var fileContents []string
-	path := filepath.Clean("ip.txt")
-	file, errOpenLogFile := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
+func ReadIP(path string) (string, error) {
+	fileContents := ""
+	file, errOpenLogFile := os.OpenFile(filepath.Clean(path), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 	if errOpenLogFile != nil {
 		return "", errors.Wrap(errOpenLogFile, "error opening log file")
 	}
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		fileContents = append(fileContents, scanner.Text())
-		if len(fileContents) >= 1 {
-			break
-		}
+		fileContents = scanner.Text()
+		break
 	}
+
 	errScan := scanner.Err()
 	if errScan != nil {
 		return "", errors.Wrap(errScan, "couldn't read file contents")
 	}
-
-	if len(fileContents) == 0 {
-		return "", nil
+	if fileContents != "" && !iputils.IsIPValid(fileContents) {
+		return "", errors.New("ip file has bogus content inside")
 	}
 
-	return fileContents[0], file.Close() // https://www.joeshaw.org/dont-defer-close-on-writable-files/
+	return fileContents, file.Close() // https://www.joeshaw.org/dont-defer-close-on-writable-files/
 }
 
-func WriteIP(ip string) error {
-	path := filepath.Clean("ip.txt")
-	errWrite := os.WriteFile(path, []byte(ip), 0600)
+func WriteIP(ip string, path string) error {
+	errWrite := os.WriteFile(filepath.Clean(path), []byte(ip), 0600)
 	if errWrite != nil {
 		return errors.Wrap(errWrite, "couldn't write ip to file")
 	}

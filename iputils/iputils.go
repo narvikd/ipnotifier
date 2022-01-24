@@ -29,13 +29,13 @@ func GetPublicIP() (string, error) {
 	}
 
 	ip := strings.TrimSuffix(string(body), "\n")
-	if !isIPValid(ip) {
+	if !IsIPValid(ip) {
 		return "", errors.New("public ip http client returned an invalid ip address")
 	}
 
 	return ip, nil
 }
 
-func isIPValid(ip string) bool {
+func IsIPValid(ip string) bool {
 	return net.ParseIP(ip) != nil
 }
