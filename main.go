@@ -9,6 +9,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"time"
 )
 
 type Model struct {
@@ -26,9 +27,22 @@ func main() {
 		IPFile:    "ip.txt",
 	}
 	checkEnv(&m)
-	errSendIP := sendIP(&m)
-	if errSendIP != nil {
-		log.Fatalln(errSendIP)
+	log.Println("IP Notifier starting...")
+
+	for {
+		log.Printf("Checking if the machine: %s has a new IP Address", m.MachineID)
+		sent, errSendIP := sendIP(&m)
+		if errSendIP != nil {
+			log.Println(errSendIP)
+		}
+
+		if sent {
+			log.Println("Sent message with new IP Address")
+		} else {
+			log.Println("No new IP was found")
+		}
+
+		time.Sleep(15 * time.Minute)
 	}
 }
 
@@ -43,15 +57,16 @@ func checkEnv(m *Model) {
 	}
 }
 
-func sendIP(m *Model) error {
+// sendIP returns true if a message has been sent, or false if it hasn't been sent
+func sendIP(m *Model) (bool, error) {
 	oldIP, errOldIP := fileio.ReadIP(m.IPFile)
 	if errOldIP != nil {
-		return errOldIP
+		return false, errOldIP
 	}
 
 	newIP, errIP := iputils.GetPublicIP()
 	if errIP != nil {
-		return errIP
+		return false, errIP
 	}
 
 	if oldIP != newIP {
@@ -60,14 +75,16 @@ func sendIP(m *Model) error {
 		tele := telegram.NewClientReqModel(msg, m.Token, m.ChatID)
 		errSend := tele.Send()
 		if errSend != nil {
-			return errSend
+			return false, errSend
 		}
 
 		errWriteIP := fileio.WriteIP(newIP, m.IPFile)
 		if errWriteIP != nil {
-			return errWriteIP
+			return false, errWriteIP
 		}
+
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
