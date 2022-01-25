@@ -16,16 +16,22 @@ func main() {
 	log.Println("IP Notifier starting...")
 
 	for {
-		log.Printf("Checking if the machine: %s has a new IP Address", m.machine)
+		if m.machineSet {
+			log.Printf("Checking if the machine \"%s\" has a new IP Address.\n", m.machine)
+		} else {
+			log.Println("Checking for a new IP Address.")
+		}
+
 		sent, errSendIP := sendIP(m)
 		if errSendIP != nil {
 			log.Println(errSendIP)
 		}
 
 		if sent {
-			log.Println("Sent message with new IP Address")
+			log.Println("New IP was found.")
+			log.Println("Sent message with new IP Address.")
 		} else {
-			log.Println("No new IP was found")
+			log.Println("No new IP was found.")
 		}
 
 		time.Sleep(10 * time.Minute)
@@ -46,7 +52,7 @@ func sendIP(m *model) (bool, error) {
 	}
 
 	if oldIP != newIP {
-		msg := fmt.Sprintf("Machine: %s.\nNew ip: %s", m.machine, newIP)
+		msg := fmt.Sprintf("Machine: %s\nNew ip: %s", m.machine, newIP)
 		if !m.machineSet {
 			msg = fmt.Sprintf("New ip: %s", newIP)
 		}
