@@ -97,6 +97,8 @@ func readIP(path string) (string, error) {
 		return "", errorsutils.Wrap(err, "ip file")
 	}
 
+	// If the file contents are empty, it needs to return an empty string, not an error.
+	// Since it has to verify if the old ip equals the old ip. If there's an error, it cannot verify it.
 	if len(contents) <= 0 {
 		return "", nil
 	}
