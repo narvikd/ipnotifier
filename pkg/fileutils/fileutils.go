@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// Read receives a file path and returns the contents of the file as a slice.
 func Read(path string) ([]string, error) {
 	var contents []string
 	fromPath := fmt.Sprintf("from path: \"%s\"", path)
@@ -30,6 +31,7 @@ func Read(path string) ([]string, error) {
 	return contents, file.Close() // https://www.joeshaw.org/dont-defer-close-on-writable-files/
 }
 
+// Write receives a string and writes it to a file overriding its contents.
 func Write(text string, path string) error {
 	errWrite := os.WriteFile(filepath.Clean(path), []byte(text), 0600)
 	if errWrite != nil {

@@ -47,7 +47,7 @@ func (m *ClientReqModel) Send() error {
 
 	defer req.Body.Close()
 	if req.StatusCode != http.StatusOK {
-		return errors.New(fmt.Sprintf("telegram http client responded with a non 200 code: %v", req.StatusCode))
+		return fmt.Errorf("telegram http client responded with a non 200 code: %v", req.StatusCode)
 	}
 
 	resModel := new(TeleResModel)

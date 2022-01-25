@@ -11,9 +11,11 @@ import (
 	"strings"
 )
 
+// GetPublicIP returns the public IP from "https://checkip.amazonaws.com".
 func GetPublicIP() (string, error) {
+	const endpoint = "https://checkip.amazonaws.com"
 	client := httpclient.MakeDefaultClient()
-	res, errRes := client.Get("https://checkip.amazonaws.com")
+	res, errRes := client.Get(endpoint)
 	if errRes != nil {
 		return "", errorsutils.Wrap(errRes, "public ip http client couldn't make http request")
 	}
@@ -38,6 +40,7 @@ func GetPublicIP() (string, error) {
 	return ip, nil
 }
 
+// IsIPValid returns a boolean indicating if the IP is valid.
 func IsIPValid(ip string) bool {
 	return net.ParseIP(ip) != nil
 }
