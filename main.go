@@ -3,41 +3,21 @@ package main
 import (
 	"errors"
 	"fmt"
-	"ipnotifier/pkg/convert"
 	"ipnotifier/pkg/errorsutils"
 	"ipnotifier/pkg/fileutils"
 	"ipnotifier/pkg/iputils"
 	"ipnotifier/telegram"
 	"log"
-	"os"
-	"reflect"
-	"strings"
 	"time"
 )
 
-type model struct {
-	machineID   string
-	token       string
-	chatID      string
-	ipFile      string
-	refreshmins string
-	refreshTime time.Duration
-}
-
 func main() {
-	m := model{
-		machineID:   os.Getenv("machineid"),
-		token:       os.Getenv("token"),
-		chatID:      os.Getenv("chatid"),
-		ipFile:      "ip.txt",
-		refreshmins: os.Getenv("refreshmins"),
-	}
-	checkEnv(&m)
+	m := newModel()
 	log.Println("IP Notifier starting...")
 
 	for {
-		log.Printf("Checking if the machine: %s has a new IP Address", m.machineID)
-		sent, errSendIP := sendIP(&m)
+		log.Printf("Checking if the machine: %s has a new IP Address", m.machine)
+		sent, errSendIP := sendIP(m)
 		if errSendIP != nil {
 			log.Println(errSendIP)
 		}
@@ -48,34 +28,14 @@ func main() {
 			log.Println("No new IP was found")
 		}
 
-		time.Sleep(m.refreshTime)
+		time.Sleep(10 * time.Minute)
 	}
-}
-
-// checkEnv checks if the environment variables are set, if they aren't it exists the application with an error.
-//
-// "refreshTime" is not verified, but "refreshStr" is. If the conversion from str to time.Duration is not successful it also exits the app.
-func checkEnv(m *model) {
-	v := reflect.ValueOf(m).Elem() // Gets the value of the pointer model
-	for i := 0; i < v.NumField(); i++ {
-		itemName := v.Type().Field(i).Name
-		varValue := v.Field(i).String()
-		if varValue == "" && itemName != "refreshTime" {
-			log.Fatalf("environment variable \"%s\" is not set.\n", strings.ToLower(itemName))
-		}
-	}
-
-	// Sets m.refreshTime
-	duration, errConvert := convert.StrToDuration(m.refreshmins)
-	if errConvert != nil {
-		log.Fatalln("environment variable \"refreshmins\" couldn't be converted to a time, please verify if it's set correctly.")
-	}
-	m.refreshTime = duration * time.Minute
 }
 
 // sendIP returns true if a message has been sent, or false if it hasn't been sent
 func sendIP(m *model) (bool, error) {
-	oldIP, errOldIP := readIP(m.ipFile)
+	const ipPath = "ip.txt"
+	oldIP, errOldIP := readIP(ipPath)
 	if errOldIP != nil {
 		return false, errOldIP
 	}
@@ -86,15 +46,17 @@ func sendIP(m *model) (bool, error) {
 	}
 
 	if oldIP != newIP {
-		msg := fmt.Sprintf("Machine: %s.\nNew ip: %s", m.machineID, newIP)
+		msg := fmt.Sprintf("Machine: %s.\nNew ip: %s", m.machine, newIP)
+		if !m.machineSet {
+			msg = fmt.Sprintf("New ip: %s", newIP)
+		}
 
-		tele := telegram.NewClientReqModel(msg, m.token, m.chatID)
-		errSend := tele.Send()
+		errSend := telegram.Send(telegram.NewClientModel(msg, m.token, m.chat))
 		if errSend != nil {
 			return false, errSend
 		}
 
-		errWriteIP := fileutils.Write(newIP, m.ipFile)
+		errWriteIP := fileutils.Write(newIP, ipPath)
 		if errWriteIP != nil {
 			return false, errWriteIP
 		}

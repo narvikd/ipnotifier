@@ -1,17 +1,17 @@
 package telegram
 
-type TeleReqModel struct {
+type RequestModel struct {
 	ChatId              string `json:"chat_id"`
 	Text                string `json:"text"`
 	DisableNotification bool   `json:"disable_notification"`
 }
 
-type TeleResModel struct {
+type ResponseModel struct {
 	Ok bool `json:"ok"`
 }
 
-func NewTeleReqModel(msg string, chatID string) *TeleReqModel {
-	model := TeleReqModel{
+func newRequestModel(msg string, chatID string) *RequestModel {
+	model := RequestModel{
 		ChatId:              chatID,
 		Text:                msg,
 		DisableNotification: true,

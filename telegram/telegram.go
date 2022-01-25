@@ -11,30 +11,30 @@ import (
 	"time"
 )
 
-type ClientReqModel struct {
-	Client           *http.Client
-	Endpoint         string
-	Token            string
-	ChatID           string
-	TimeoutSeconds   time.Duration
-	Message          string
-	TeleRequestModel *TeleReqModel
+type ClientModel struct {
+	Client         *http.Client
+	Endpoint       string
+	Token          string
+	ChatID         string
+	TimeoutSeconds time.Duration
+	Message        string
+	RequestModel   *RequestModel
 }
 
-func NewClientReqModel(message string, token string, chatId string) *ClientReqModel {
-	m := ClientReqModel{
-		Client:           httpclient.MakeDefaultClient(),
-		Endpoint:         "https://api.telegram.org/bot" + token + "/sendMessage",
-		Token:            token,
-		ChatID:           chatId,
-		Message:          message,
-		TeleRequestModel: NewTeleReqModel(message, chatId),
+func NewClientModel(message string, token string, chatId string) *ClientModel {
+	m := ClientModel{
+		Client:       httpclient.MakeDefaultClient(),
+		Endpoint:     "https://api.telegram.org/bot" + token + "/sendMessage",
+		Token:        token,
+		ChatID:       chatId,
+		Message:      message,
+		RequestModel: newRequestModel(message, chatId),
 	}
 	return &m
 }
 
-func (m *ClientReqModel) Send() error {
-	reqBody, errMarshal := json.Marshal(m.TeleRequestModel)
+func Send(m *ClientModel) error {
+	reqBody, errMarshal := json.Marshal(m.RequestModel)
 	if errMarshal != nil {
 		return errorsutils.Wrap(errMarshal, "telegram http client couldn't marshall telegram model")
 	}
@@ -50,7 +50,7 @@ func (m *ClientReqModel) Send() error {
 		return fmt.Errorf("telegram http client responded with a non 200 code: %v", req.StatusCode)
 	}
 
-	resModel := new(TeleResModel)
+	resModel := new(ResponseModel)
 	errResDecode := json.NewDecoder(req.Body).Decode(resModel)
 	if errResDecode != nil {
 		return errorsutils.Wrap(errResDecode, "telegram http client couldn't decode response into response model")
