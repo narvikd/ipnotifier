@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// ClientModel represents a collection of tools and information necessary to make a request to the Telegram API.
 type ClientModel struct {
 	Client         *http.Client
 	Endpoint       string
@@ -21,6 +22,7 @@ type ClientModel struct {
 	RequestModel   *RequestModel
 }
 
+// NewClientModel returns a new pointer of ClientModel using the default http client and setting its endpoint to the Telegram API.
 func NewClientModel(message string, token string, chatId string) *ClientModel {
 	m := ClientModel{
 		Client:       httpclient.MakeDefaultClient(),
@@ -33,6 +35,7 @@ func NewClientModel(message string, token string, chatId string) *ClientModel {
 	return &m
 }
 
+// Send makes the bot send a message using ClientModel .
 func Send(m *ClientModel) error {
 	reqBody, errMarshal := json.Marshal(m.RequestModel)
 	if errMarshal != nil {
