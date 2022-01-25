@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"ipnotifier/httpclient"
 	"ipnotifier/pkg/errorsutils"
+	"ipnotifier/pkg/httpclient"
 	"net"
 	"net/http"
 	"strings"
@@ -21,7 +21,8 @@ func GetPublicIP() (string, error) {
 
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return "", errors.New(fmt.Sprintf("public ip http client responded with a non 200 code: %v", res.StatusCode))
+		errStr := fmt.Sprintf("public ip http client responded with a non 200 code: %v", res.StatusCode)
+		return "", errors.New(errStr)
 	}
 
 	body, errBody := ioutil.ReadAll(res.Body)

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"ipnotifier/httpclient"
 	"ipnotifier/pkg/errorsutils"
+	"ipnotifier/pkg/httpclient"
 	"net/http"
 	"time"
 )

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"ipnotifier/fileio"
-	"ipnotifier/iputils"
+	"ipnotifier/pkg/errorsutils"
+	"ipnotifier/pkg/fileutils"
+	"ipnotifier/pkg/iputils"
 	"ipnotifier/telegram"
 	"log"
 	"os"
@@ -59,7 +61,7 @@ func checkEnv(m *Model) {
 
 // sendIP returns true if a message has been sent, or false if it hasn't been sent
 func sendIP(m *Model) (bool, error) {
-	oldIP, errOldIP := fileio.ReadIP(m.IPFile)
+	oldIP, errOldIP := readIP(m.IPFile)
 	if errOldIP != nil {
 		return false, errOldIP
 	}
@@ -78,7 +80,7 @@ func sendIP(m *Model) (bool, error) {
 			return false, errSend
 		}
 
-		errWriteIP := fileio.WriteIP(newIP, m.IPFile)
+		errWriteIP := fileutils.Write(newIP, m.IPFile)
 		if errWriteIP != nil {
 			return false, errWriteIP
 		}
@@ -87,4 +89,21 @@ func sendIP(m *Model) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func readIP(path string) (string, error) {
+	contents, err := fileutils.Read(path)
+	if err != nil {
+		return "", errorsutils.Wrap(err, "ip file")
+	}
+
+	if len(contents) <= 0 {
+		return "", nil
+	}
+
+	ip := contents[0]
+	if ip != "" && !iputils.IsIPValid(ip) {
+		return "", errors.New("ip file has bogus content inside")
+	}
+	return ip, nil
 }
